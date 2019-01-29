@@ -1,0 +1,289 @@
+#include <CurieBLE.h>
+
+
+
+int stepPIN = 2;
+int dirPIN = 1;
+int sleep=3;
+
+int turnLeft = 12;
+int turnRight = 13;
+
+
+
+int dioda1 =8;
+int dioda2 =9;
+int dioda3 =10;
+int dioda4 =11;
+
+
+int modeActive=0;
+boolean x= true;
+
+
+
+BLEPeripheral blePeripheral;  // Bluetooth low energy naszego urz¹dzenia
+BLEService engineService("19B10000-E8F2-537E-4F6C-D104768A1212"); // Nasz serwis 
+
+
+// Characteristic dla naszego serwisu
+BLECharCharacteristic   modeCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1212", BLERead | BLEWrite);
+//BLECharCharacteristic   turnCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1213", BLERead | BLEWrite);
+
+
+
+int level= 0;
+int turn = 0;
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(stepPIN, OUTPUT);
+  pinMode(dirPIN, OUTPUT);
+  pinMode(sleep, OUTPUT);
+
+  pinMode(turnLeft,INPUT_PULLUP);
+  pinMode(turnLeft,INPUT_PULLUP);
+
+  pinMode(dioda1,OUTPUT);
+  pinMode(dioda2,OUTPUT);
+  pinMode(dioda3,OUTPUT);
+  pinMode(dioda4,OUTPUT);
+
+
+
+  // set advertised local name and service UUID:
+  blePeripheral.setLocalName("engineService");
+  blePeripheral.setAdvertisedServiceUuid(engineService.uuid());
+
+
+  // add service and characteristic:
+  blePeripheral.addAttribute(engineService);
+  blePeripheral.addAttribute(modeCharacteristic);
+  //blePeripheral.addAttribute(turnCharacteristic);
+
+  // Ustawienie wstêpne wartoœci dla trybu silnika
+  modeCharacteristic.setValue(level);
+  
+  // Ustawienie wstêpne wartoœci dla kierunku silnika
+  //turnCharacteristic.setValue(turn);
+
+  //Rozpoczêcie udostêpniania BLE serwisu 
+  blePeripheral.begin();
+
+  Serial.println("BLE LED Peripheral");
+}
+
+void loop() {
+  // listen for BLE peripherals to connect:
+  BLECentral central = blePeripheral.central();
+ 
+  // Je¿eli centrala po³¹czy siê z urz¹dzeniem:
+  if (central) {
+    Serial.print("Connected to central: ");
+    // Wypisuje adres urz¹denia z którym jesteœmy pod³aczeni
+    Serial.println(central.address());
+
+    // Tak d³ugo jak jesteœmy pod³aczeni wykonuje sie pentla
+    while (central.connected()) {
+
+      // Je¿eli modeCharacteristic zosta³o nadpisane przez inne urz¹dzenie 
+      if (modeCharacteristic.written()) {
+        if(modeCharacteristic.value())
+        level=modeCharacteristic.value();
+        }
+
+     // if(turnCharacteristic.written()){
+        
+     // }
+        
+        // Funkcja obs³ugi silnika
+       // engine();
+      
+    }
+
+    // Roz³¹czenie siê z urz¹dzeniem :
+    Serial.print(F("Disconnected from central: "));
+    Serial.println(central.address());
+  }
+}
+
+
+void engine(){
+
+// Tryb czekania Off
+if(level==0)
+{
+  digitalWrite(sleep,LOW);
+  modeActive=0;
+  delay(2000);
+}
+
+//Tryb pierwszy
+if(level==1){   
+  modeActive=1;
+}
+
+//Tryb drugi
+if(level==2){ 
+  modeActive=2;
+}
+
+//Tryb trzeci 
+if(level==3){  
+  modeActive=3;
+}
+
+
+// Tryb czwarty  Losowy ruch 
+if(level==5)
+{
+  
+  for(int i=0; i<10;i++)
+  {
+    selectDiode( 1);
+    delay(50);
+    selectDiode( 2);
+    delay(50);
+    selectDiode( 3);
+    delay(50);
+  }
+  autoMove();
+  digitalWrite(sleep,LOW);
+  modeActive=0;
+  delay(2000);
+    for(int i=0; i<10;i++)
+  {
+    selectDiode( 1);
+    delay(50);
+    selectDiode( 2);
+    delay(50);
+    selectDiode( 3);
+    delay(50);
+  }
+  level=0;
+}
+
+
+// Wybieranie koloru diod wed³ug wybranego trybu
+selectDiode( modeActive);
+
+
+if(modeActive!=0)
+{
+  if(digitalRead(turnLeft)==0){
+    moveEngine(0 ,modeActive);
+  }
+  
+ if(digitalRead(turnRight)==0){
+    moveEngine(1 ,modeActive);
+  }
+  
+}
+
+
+}
+
+
+
+
+
+
+
+
+void autoMove()
+{
+  int endPoint=4000;
+  int startPoint = 0;
+  int current =2000;
+   for(int i=0; i<80;i++){
+       int steps= random(50,400);
+       int rapid= random(1,4);
+       int vector= random(0,2);
+   
+       delay(80);
+       for(int j=0;j<steps;j++)
+       {
+        
+       
+        if(current>startPoint && current<endPoint)
+        {
+           if(vector==0)
+          {
+            current--;
+          }else
+          {
+            current++;
+          }
+        moveEngine(vector,rapid);
+        }else
+        {
+          break;
+        }
+       }
+       
+      
+  }
+
+
+}
+
+
+void moveEngine(int dir,int modeActive){
+  
+  if(dir==0){
+      digitalWrite(dirPIN,LOW);
+      
+  }else{
+      digitalWrite(dirPIN,HIGH);
+  }
+  engineStep(modeActive);
+}
+
+
+ void engineStep(int speedRotate)
+ {
+  
+  digitalWrite(sleep,HIGH);
+  digitalWrite(stepPIN, HIGH);
+  delayMicroseconds(600*speedRotate);
+  digitalWrite(stepPIN, LOW); 
+ }
+
+
+void selectDiode(int modeActive)
+{
+  switch(modeActive)
+  {
+    case 0:
+        digitalWrite(dioda1,LOW);
+        digitalWrite(dioda2,LOW);
+        digitalWrite(dioda3,LOW);
+        digitalWrite(dioda4,HIGH);
+    break;
+
+      case 1:
+        digitalWrite(dioda1,LOW);
+        digitalWrite(dioda2,LOW);
+        digitalWrite(dioda3,HIGH);
+        digitalWrite(dioda4,LOW);
+    break;
+
+      case 2:
+        digitalWrite(dioda1,LOW);
+        digitalWrite(dioda2,HIGH);
+        digitalWrite(dioda3,LOW);
+        digitalWrite(dioda4,LOW);
+    break;
+      case 3:
+        digitalWrite(dioda1,HIGH);
+        digitalWrite(dioda2,LOW);
+        digitalWrite(dioda3,LOW);
+        digitalWrite(dioda4,LOW);
+    break;
+  }
+  
+}
+
+
+
