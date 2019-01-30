@@ -372,6 +372,7 @@ void selectDiode(int modeActive)
         digitalWrite(dioda4,HIGH);
     break;
   }
-  
-}
+   
 
+}
+ 
