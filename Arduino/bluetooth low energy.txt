@@ -1,3 +1,4 @@
+
 #include <CurieBLE.h>
 #include <CurieIMU.h>
 
@@ -18,7 +19,7 @@ int dioda4 =11;
 
 // Accelerometr params
   int _dir = 0;
-  int _speed=0;
+  double _speed=1;
   int looper=0;
 //
 int modeActive=0;
@@ -176,7 +177,7 @@ if(level==3){
 if(level==4)
 {
  modeActive=4;
-readAccelerometrPosition();
+moveEngineAccelerometr();
 }
 
 // Tryb piaty  Losowy ruch 
@@ -228,12 +229,6 @@ if(modeActive ==1 || modeActive==2 || modeActive==3)
 
 
 }
-
-
-
-
-
-
 
 
 void autoMove()
@@ -296,6 +291,23 @@ void moveEngine(int dir,int modeActive){
  }
 
 
+
+
+void moveEngineAccelerometr(){
+  looper++;
+  if(looper >100){
+  readValueFromAccelerometr();
+  
+  looper=0;
+  }
+  moveEngine(_dir,_speed);
+  
+}
+
+
+
+
+
 void readValueFromAccelerometr(){
   float ax, ay, az;   //scaled accelerometer values
 
@@ -312,7 +324,7 @@ void readValueFromAccelerometr(){
   }
 
   _speed = 10*ay;
-      Serial.print(_speed);
+
   if(_speed<0){
     _speed*=-1;
   }
@@ -320,18 +332,7 @@ void readValueFromAccelerometr(){
   {
     _speed=1;
   }
- 
-  
-
-  
 }
-
-void readAccelerometrPosition(){
- 
-  moveEngine(_dir,1);
-  
-}
-
 
 void selectDiode(int modeActive)
 {
@@ -373,5 +374,4 @@ void selectDiode(int modeActive)
   }
   
 }
-
 
