@@ -24,8 +24,6 @@ public class MainModel  {
         this.mainActivity = mainActivity;
         connect = Connect.getInstance(mainActivity);
         connect.initialize();
-
-
     }
 
 
