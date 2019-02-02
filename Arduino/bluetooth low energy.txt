@@ -1,4 +1,6 @@
+
 #include <CurieBLE.h>
+#include <CurieIMU.h>
 
 
 
@@ -10,13 +12,16 @@ int turnLeft = 12;
 int turnRight = 13;
 
 
-
 int dioda1 =8;
 int dioda2 =9;
 int dioda3 =10;
 int dioda4 =11;
 
-
+// Accelerometr params
+  int _dir = 0;
+  double _speed=1;
+  int looper=0;
+//
 int modeActive=0;
 boolean x= true;
 
@@ -27,13 +32,14 @@ BLEService engineService("19B10000-E8F2-537E-4F6C-D104768A1212"); // Nasz serwis
 
 
 // Characteristic dla naszego serwisu
-BLECharCharacteristic   modeCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1212", BLERead | BLEWrite);
-//BLECharCharacteristic   turnCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1213", BLERead | BLEWrite);
+BLECharCharacteristic    modeCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1212", BLERead | BLEWrite);
+BLECharCharacteristic    turnCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1213", BLERead | BLEWrite);
+BLEIntCharacteristic    stepsCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite);
 
 
-
-int level= 0;
-int turn = 0;
+unsigned int level= 0;
+unsigned int turn = 0;
+unsigned int steps= 0;
 
 void setup() {
   Serial.begin(9600);
@@ -50,7 +56,10 @@ void setup() {
   pinMode(dioda3,OUTPUT);
   pinMode(dioda4,OUTPUT);
 
-
+  // Initialize device
+  CurieIMU.begin();
+  // set accelerometr range to 2G 
+  CurieIMU.setAccelerometerRange(2);
 
   // set advertised local name and service UUID:
   blePeripheral.setLocalName("engineService");
@@ -60,13 +69,18 @@ void setup() {
   // add service and characteristic:
   blePeripheral.addAttribute(engineService);
   blePeripheral.addAttribute(modeCharacteristic);
-  //blePeripheral.addAttribute(turnCharacteristic);
+  blePeripheral.addAttribute(turnCharacteristic);
+  blePeripheral.addAttribute(stepsCharacteristic);
 
+  
   // Ustawienie wstêpne wartoœci dla trybu silnika
   modeCharacteristic.setValue(level);
   
   // Ustawienie wstêpne wartoœci dla kierunku silnika
-  //turnCharacteristic.setValue(turn);
+  turnCharacteristic.setValue(turn);
+
+  // Ustawienie wstêpne wartoœci dla iloœciu kroków
+  turnCharacteristic.setValue(steps);
 
   //Rozpoczêcie udostêpniania BLE serwisu 
   blePeripheral.begin();
@@ -77,7 +91,8 @@ void setup() {
 void loop() {
   // listen for BLE peripherals to connect:
   BLECentral central = blePeripheral.central();
- 
+
+  
   // Je¿eli centrala po³¹czy siê z urz¹dzeniem:
   if (central) {
     Serial.print("Connected to central: ");
@@ -87,18 +102,37 @@ void loop() {
     // Tak d³ugo jak jesteœmy pod³aczeni wykonuje sie pentla
     while (central.connected()) {
 
+       
       // Je¿eli modeCharacteristic zosta³o nadpisane przez inne urz¹dzenie 
       if (modeCharacteristic.written()) {
-        if(modeCharacteristic.value())
+        
         level=modeCharacteristic.value();
-        }
+        Serial.print("Lebel:");
+        Serial.println(level);
+      }
+      
+      if (turnCharacteristic.written()) {
 
-     // if(turnCharacteristic.written()){
-        
-     // }
-        
+       
+        turn=turnCharacteristic.value();
+        Serial.print("Steps:");
+        Serial.println(steps);
+
+      }
+
+      if (stepsCharacteristic.written()) {
+         steps=stepsCharacteristic.value();
+       
+        Serial.print("Turn:");
+        Serial.println(turn);
+      }
+
+
+
         // Funkcja obs³ugi silnika
-       // engine();
+      engine();
+
+   
       
     }
 
@@ -109,6 +143,11 @@ void loop() {
 }
 
 
+void setModeCharacteristicValue(int mode){
+  level=mode;
+  modeCharacteristic.setValue(level);
+}
+
 void engine(){
 
 // Tryb czekania Off
@@ -116,7 +155,7 @@ if(level==0)
 {
   digitalWrite(sleep,LOW);
   modeActive=0;
-  delay(2000);
+  delay(50);
 }
 
 //Tryb pierwszy
@@ -134,8 +173,14 @@ if(level==3){
   modeActive=3;
 }
 
+// Tryb czwarty akcelerometr
+if(level==4)
+{
+ modeActive=4;
+moveEngineAccelerometr();
+}
 
-// Tryb czwarty  Losowy ruch 
+// Tryb piaty  Losowy ruch 
 if(level==5)
 {
   
@@ -161,34 +206,29 @@ if(level==5)
     selectDiode( 3);
     delay(50);
   }
-  level=0;
+  
+  setModeCharacteristicValue(0);
 }
+
+
 
 
 // Wybieranie koloru diod wed³ug wybranego trybu
 selectDiode( modeActive);
 
 
-if(modeActive!=0)
+//Reczne sterowanie silnikiem (Wybieranie trybu 1,2,3)
+if(modeActive ==1 || modeActive==2 || modeActive==3)
 {
-  if(digitalRead(turnLeft)==0){
-    moveEngine(0 ,modeActive);
+  for(int i = 0; i<steps;i++)
+  {
+    moveEngine(turn ,modeActive);
   }
-  
- if(digitalRead(turnRight)==0){
-    moveEngine(1 ,modeActive);
-  }
-  
+   setModeCharacteristicValue(0);
 }
 
 
 }
-
-
-
-
-
-
 
 
 void autoMove()
@@ -246,10 +286,53 @@ void moveEngine(int dir,int modeActive){
   
   digitalWrite(sleep,HIGH);
   digitalWrite(stepPIN, HIGH);
-  delayMicroseconds(600*speedRotate);
+  delayMicroseconds(800*speedRotate);
   digitalWrite(stepPIN, LOW); 
  }
 
+
+
+
+void moveEngineAccelerometr(){
+  looper++;
+  if(looper >100){
+  readValueFromAccelerometr();
+  
+  looper=0;
+  }
+  moveEngine(_dir,_speed);
+  
+}
+
+
+
+
+
+void readValueFromAccelerometr(){
+  float ax, ay, az;   //scaled accelerometer values
+
+  // read accelerometer measurements from device, scaled to the configured range
+  CurieIMU.readAccelerometerScaled(ax, ay, az);
+  // display tab-separated accelerometer x/y/z values
+  Serial.print("a:\t");
+  Serial.print(ay);
+  Serial.println();
+  if(ay>=0){
+    _dir=0;
+  }else{
+    _dir=1;
+  }
+
+  _speed = 10*ay;
+
+  if(_speed<0){
+    _speed*=-1;
+  }
+  if(_speed<1)
+  {
+    _speed=1;
+  }
+}
 
 void selectDiode(int modeActive)
 {
@@ -281,9 +364,14 @@ void selectDiode(int modeActive)
         digitalWrite(dioda3,LOW);
         digitalWrite(dioda4,LOW);
     break;
+
+      case 4:
+        digitalWrite(dioda1,LOW);
+        digitalWrite(dioda2,HIGH);
+        digitalWrite(dioda3,HIGH);
+        digitalWrite(dioda4,HIGH);
+    break;
   }
   
 }
-
-
 
