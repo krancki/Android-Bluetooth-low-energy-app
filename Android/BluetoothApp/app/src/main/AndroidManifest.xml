@@ -9,7 +9,11 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+   
+>>>>>>> 2d3ee3093ea6abd2dc09e210a10e04b4085c6c7b
 =======
    
 >>>>>>> 2d3ee3093ea6abd2dc09e210a10e04b4085c6c7b
