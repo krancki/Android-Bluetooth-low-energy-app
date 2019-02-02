@@ -128,6 +128,11 @@
             android:layout_alignParentStart="true"
             android:layout_marginStart="93dp"
             android:layout_marginTop="3dp"
+<<<<<<< HEAD
+=======
+            android:layout_marginEnd="245dp"
+            android:layout_toStartOf="@+id/donwloadDateBtn"
+>>>>>>> 2d3ee3093ea6abd2dc09e210a10e04b4085c6c7b
             android:text="x" />
 
     </RelativeLayout>
