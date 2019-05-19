@@ -11,9 +11,11 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import android.content.IntentFilter;
 import android.content.res.AssetManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -131,7 +133,7 @@ public class Connect {
 
                 if (uuid.contains("00002A00".toLowerCase())) {
                     value = new String(data);
-                }else if (uuid.contains("00002A01".toLowerCase())) {
+                } else if (uuid.contains("00002A01".toLowerCase())) {
 
                     value = getCategory(byteBuffer.getShort(0));
                 } else if (uuid.contains("00002A04".toLowerCase()) && data.length >= 7) {
@@ -146,8 +148,8 @@ public class Connect {
                 } else {
 
                     stringBuilder.append("Byte:");
-                    for(int i=0; i<data.length;i++){
-                        stringBuilder.append(String.format("%02X",data[i])+" ");
+                    for (int i = 0; i < data.length; i++) {
+                        stringBuilder.append(String.format("%02X", data[i]) + " ");
                     }
 
                     try {
@@ -172,6 +174,20 @@ public class Connect {
         }
     };
 
+
+    // Create callback for discover device
+    BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String deviceName = device.getName();
+                String deviceHardwareAddress = device.getAddress();
+                Log.i("urzadzenia",deviceName);
+            }
+        }
+    };
 
     // Singleton
     private Connect() {
@@ -249,6 +265,15 @@ public class Connect {
             return false;
         }
 
+    }
+
+    //
+    public boolean discoverDevices() {
+
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        appCompatActivity.getApplicationContext().registerReceiver(receiver, filter);
+
+        return true;
     }
 
 

@@ -14,33 +14,27 @@ public class MainController {
     private final MainModel mainModel;
 
 
-    public MainController(MainActivity mainActivity, MainModel mainModel){
-        this.mainModel=mainModel;
-        this.mainActivity=mainActivity;
-
-
-
-
+    public MainController(MainActivity mainActivity, MainModel mainModel) {
+        this.mainModel = mainModel;
+        this.mainActivity = mainActivity;
     }
 
 
-public void addActionListnerForbtnShowall(Button button){
+    public void addActionListnerForbtnShowall(Button button) {
         button.setOnClickListener((view) -> {
             mainActivity.removeElemFromList();
             mainModel.getAllDevice();
         });
-}
+    }
 
 
-public void addActionListnerForListView(ListView listView){
+    public void addActionListnerForListView(ListView listView) {
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
 
-         mainModel.openConnection(position);
+            mainModel.openConnection(position);
         });
-}
-
-
+    }
 
 
 }

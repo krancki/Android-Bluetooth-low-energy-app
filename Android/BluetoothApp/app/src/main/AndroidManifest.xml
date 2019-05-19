@@ -5,7 +5,6 @@
     package="com.krancki.test.bluetoothapp">
 
 
-
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
@@ -17,11 +16,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
 
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
-        >
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
         <activity
-            android:screenOrientation="portrait"
-            android:name=".MainMenu.MainActivity">
+            android:name=".MainMenu.MainActivity"
+            android:screenOrientation="portrait">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -30,9 +28,19 @@
             </intent-filter>
         </activity>
 
-    <activity android:screenOrientation="portrait" android:name=".ConnectionActivity.ConnectionActivity"  android:parentActivityName=".MainMenu.MainActivity" >
+        <activity
+            android:name=".ConnectionActivity.ConnectionActivity"
+            android:parentActivityName=".MainMenu.MainActivity"
+            android:screenOrientation="portrait">
 
-    </activity>
+        </activity>
+
+        <activity
+            android:name=".SearchDevices.SearchActivity"
+            android:parentActivityName=".MainMenu.MainActivity"
+            android:screenOrientation="portrait">
+
+        </activity>
 
     </application>
 
